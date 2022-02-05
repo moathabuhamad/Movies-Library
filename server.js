@@ -8,7 +8,11 @@ const PORT = process.env.PORT;
 const APIKEY = process.env.APIKEY;
 const movieData = require("./Movie Data/data.json");
 const app = express();
-
+const pg = require("pg");
+const { request } = require("express");
+const { Client } = require("pg/lib");
+const DATABASE_URL = process.env.DATABASE_URL;
+const client = new pg.Client(DATABASE_URL);
 app.use(express.json());
 
 function Movie(id, title, release_date, posterPath, overview) {
@@ -22,9 +26,11 @@ function Movie(id, title, release_date, posterPath, overview) {
 app.get("/", homeHandler);
 app.get("/favorite", favoriteHandler);
 app.get("/trending", trendingHandler);
-app.get("/topRatedTv",topRatedTvHandler);
-app.get("/tv",tvHandler);
+app.get("/topRatedTv", topRatedTvHandler);
+app.get("/tv", tvHandler);
 app.get("/search", searchHandler);
+app.post("/addMovie", addMovieHandler);
+app.get("/getMovies", getMoviesHandler);
 app.use("*", noEndPointHandler);
 
 function homeHandler(req, res) {
@@ -139,6 +145,37 @@ function errorHandler(message, req, res) {
   return res.status(500).send(err);
 }
 
+function addMovieHandler(req, res) {
+  const movie = req.body;
+  const sql = `INSERT INTO favmovie(title,release_date,poster_path,overview,comment) VALUES($1,$2,$3,$4,$5) RETURNING *;`;
+  let values = [
+    movie.title,
+    movie.release_date,
+    movie.poster_path,
+    movie.overview,
+    movie.comment,
+  ];
+  client.query(sql, values).then((data) => {
+    console.log(data);
+    return res.status(201).json(data.rows[0]);
+  })
+  .catch((error) => {
+    errorHandler(error, req, res);
+  })
+}
+
+function getMoviesHandler(req,res){
+const sql = `SELECT * FROM favmovie;`;
+client.query(sql).then((data)=>{
+return res.status(200).json(data.rows);
+})
+.catch((error) => {
+  errorHandler(error, req, res);
+});
+}
+
+client.connect().then(()=>{
 app.listen(PORT, () => {
   console.log(`listening to port ${PORT}`);
 });
+})
