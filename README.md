@@ -15,3 +15,9 @@
 ## added sql features:
 - /addmovie adds a movie to the database
 - /getMovies returns all movies in fav data base
+
+
+## added more sql features:
+- /delete/id
+- /update/id
+-/getMovie/id
